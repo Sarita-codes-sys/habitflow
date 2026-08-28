@@ -78,7 +78,7 @@ router.get('/dynamic', async (req, res) => {
     }
   });
 
-  const generatedInsights = [];
+  const generatedInsights: any[] = [];
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
 
