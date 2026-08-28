@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               BigInt      @id @default(autoincrement())
+  email            String      @unique
+  passwordHash     String      @map("password_hash")
+  displayName      String      @map("display_name")
+  themePreference  String?     @map("theme_preference")
+  badgeCount       Int         @default(0) @map("badge_count")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  habits           Habit[]
+  badges           Badge[]
+  insights         Insight[]
+  reminders        Reminder[]
+
+  @@map("users")
+}
+
+model Category {
+  id               BigInt      @id @default(autoincrement())
+  name             String      @unique
+  icon             String?
+  color            String?
+  createdAt        DateTime    @default(now()) @map("created_at")
+  habits           Habit[]
+
+  @@map("categories")
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+}
+
+model Habit {
+  id               BigInt      @id @default(autoincrement())
+  userId           BigInt      @map("user_id")
+  categoryId       BigInt?     @map("category_id")
+  name             String
+  frequency        Frequency
+  timeOfDay        String?     @map("time_of_day")
+  targetPerWeek    Int?        @map("target_per_week")
+  archived         Boolean     @default(false)
+  createdAt        DateTime    @default(now()) @map("created_at")
+
+  user             User        @relation(fields: [userId], references: [id])
+  category         Category?   @relation(fields: [categoryId], references: [id])
+  completions      HabitCompletion[]
+  streak           Streak?
+  reminders        Reminder[]
+
+  @@map("habits")
+}
+
+model HabitCompletion {
+  id               BigInt      @id @default(autoincrement())
+  habitId          BigInt      @map("habit_id")
+  completedDate    DateTime    @db.Date @map("completed_date")
+  createdAt        DateTime    @default(now()) @map("created_at")
+
+  habit            Habit       @relation(fields: [habitId], references: [id])
+
+  @@unique([habitId, completedDate])
+  @@map("habit_completions")
+}
+
+model Streak {
+  id               BigInt      @id @default(autoincrement())
+  habitId          BigInt      @unique @map("habit_id")
+  currentStreak    Int         @default(0) @map("current_streak")
+  longestStreak    Int         @default(0) @map("longest_streak")
+  lastCompletedDate DateTime?  @db.Date @map("last_completed_date")
+
+  habit            Habit       @relation(fields: [habitId], references: [id])
+
+  @@map("streaks")
+}
+
+model Badge {
+  id               BigInt      @id @default(autoincrement())
+  userId           BigInt      @map("user_id")
+  badgeType        String      @map("badge_type")
+  earnedAt         DateTime    @default(now()) @map("earned_at")
+
+  user             User        @relation(fields: [userId], references: [id])
+
+  @@unique([userId, badgeType])
+  @@map("badges")
+}
+
+model Insight {
+  id               BigInt      @id @default(autoincrement())
+  userId           BigInt      @map("user_id")
+  ruleId           String      @map("rule_id")
+  message          String      @db.Text
+  generatedAt      DateTime    @default(now()) @map("generated_at")
+
+  user             User        @relation(fields: [userId], references: [id])
+
+  @@map("insights")
+}
+
+model Reminder {
+  id               BigInt      @id @default(autoincrement())
+  habitId          BigInt      @map("habit_id")
+  userId           BigInt      @map("user_id")
+  reminderTime     DateTime    @db.Time(0) @map("reminder_time")
+  enabled          Boolean     @default(true)
+
+  habit            Habit       @relation(fields: [habitId], references: [id])
+  user             User        @relation(fields: [userId], references: [id])
+
+  @@map("reminders")
+}
