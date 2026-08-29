@@ -2,6 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import { prisma } from './prisma';
 
+// Fix for Prisma BigInt serialization
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 import authRouter from './routes/auth';
 import habitsRouter from './routes/habits';
 import analyticsRouter from './routes/analytics';
